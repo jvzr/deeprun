@@ -24,40 +24,25 @@ RUN rpm --import https://packages.microsoft.com/keys/microsoft.asc && \
     rpm --import https://pkgs.tailscale.com/stable/fedora/repo.gpg
 
 # ============================================
-# PHASE 2: Run build script
+# PHASE 2: Build everything
 # ============================================
 COPY build_files /tmp/build_files
 COPY extensions /tmp/extensions
 
-RUN chmod +x /tmp/build_files/build.sh && \
+RUN chmod +x /tmp/build_files/build.sh /tmp/build_files/build-gnome-extensions.sh && \
     /tmp/build_files/build.sh && \
-    ostree container commit
-
-# ============================================
-# PHASE 3: Build GNOME extensions
-# ============================================
-RUN chmod +x /tmp/build_files/build-gnome-extensions.sh && \
     /tmp/build_files/build-gnome-extensions.sh && \
-    ostree container commit
-
-# ============================================
-# PHASE 4: Plymouth boot logo + initramfs
-# ============================================
-RUN cp /tmp/build_files/watermark.png /usr/share/plymouth/themes/spinner/watermark.png && \
+    cp /tmp/build_files/watermark.png /usr/share/plymouth/themes/spinner/watermark.png && \
     QUALIFIED_KERNEL=$(ls /lib/modules/ | sort -V | tail -1) && \
     /usr/bin/dracut --no-hostonly --kver "$QUALIFIED_KERNEL" --reproducible --zstd -v --add ostree -f "/lib/modules/$QUALIFIED_KERNEL/initramfs.img" && \
+    rm -rf /tmp/build_files /tmp/extensions && \
     ostree container commit
 
 # ============================================
-# PHASE 5: Install Flatpak helper script
+# PHASE 3: Install Flatpak helper script
 # ============================================
 COPY config/flatpak-install.sh /usr/share/deeprun/flatpak-install.sh
 RUN chmod +x /usr/share/deeprun/flatpak-install.sh
-
-# ============================================
-# PHASE 6: Cleanup
-# ============================================
-RUN rm -rf /tmp/build_files /tmp/extensions
 
 # ============================================
 # Final ostree commit
