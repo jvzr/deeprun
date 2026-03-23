@@ -34,7 +34,7 @@ dnf5 -y remove \
 echo ""
 echo "💻 Installing terminal and editor..."
 
-dnf5 -y install \
+dnf5 -y install --allowerasing \
     ghostty \
     code
 
