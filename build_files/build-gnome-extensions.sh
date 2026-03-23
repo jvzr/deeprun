@@ -15,12 +15,13 @@ echo "════════════════════════�
 install_ego() {
     local PK=$1
     local URL="https://extensions.gnome.org/extension-info/?pk=${PK}&shell_version=${GNOME_VERSION}"
-    local UUID=$(curl -fsSL "$URL" | python3 -c "import sys,json; print(json.load(sys.stdin)['uuid'])")
-    local DL=$(curl -fsSL "$URL" | python3 -c "import sys,json; print(json.load(sys.stdin)['download_url'])")
+    local INFO=$(curl -fsSL "$URL")
+    local UUID=$(echo "$INFO" | python3 -c "import sys,json; print(json.load(sys.stdin)['uuid'])")
+    local DL=$(echo "$INFO" | python3 -c "import sys,json; print(json.load(sys.stdin)['download_url'])")
 
     echo "📦 Installing $UUID..."
     mkdir -p "$EXTENSIONS_DIR/$UUID"
-    curl -fsSL "https://extensions.gnome.org$DL" -o /tmp/ext.zip
+    curl -fsSL "https://extensions.gnome.org${DL}" -o /tmp/ext.zip
     unzip -qo /tmp/ext.zip -d "$EXTENSIONS_DIR/$UUID"
     rm /tmp/ext.zip
     cp "$EXTENSIONS_DIR/$UUID/schemas/"*.gschema.xml "$SCHEMAS_DIR/" 2>/dev/null || true
