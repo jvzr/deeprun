@@ -24,18 +24,16 @@ RUN rpm --import https://packages.microsoft.com/keys/microsoft.asc && \
     rpm --import https://pkgs.tailscale.com/stable/fedora/repo.gpg
 
 # ============================================
-# PHASE 2: Build everything
+# PHASE 2: Install packages + Plymouth + initramfs
 # ============================================
 COPY build_files /tmp/build_files
-COPY extensions /tmp/extensions
 
-RUN chmod +x /tmp/build_files/build.sh /tmp/build_files/build-gnome-extensions.sh && \
+RUN chmod +x /tmp/build_files/build.sh && \
     /tmp/build_files/build.sh && \
-    /tmp/build_files/build-gnome-extensions.sh && \
     cp /tmp/build_files/watermark.png /usr/share/plymouth/themes/spinner/watermark.png && \
     QUALIFIED_KERNEL=$(ls /lib/modules/ | sort -V | tail -1) && \
     /usr/bin/dracut --no-hostonly --kver "$QUALIFIED_KERNEL" --reproducible --zstd -v --add ostree -f "/lib/modules/$QUALIFIED_KERNEL/initramfs.img" && \
-    rm -rf /tmp/build_files /tmp/extensions && \
+    rm -rf /tmp/build_files && \
     ostree container commit
 
 # ============================================
