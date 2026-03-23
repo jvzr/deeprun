@@ -1,0 +1,19 @@
+name: deeprun
+description: Universal Blue GNOME image with PaperWM + custom tools
+base-image: ghcr.io/ublue-os/silverblue
+image-version: "43"
+
+installer:
+  enabled: true
+  type: anaconda
+  kickstart:
+    locale: en_US.UTF-8
+    keyboard: us
+    timezone: UTC
+    network: --bootproto=dhcp --device=link --activate
+    rootpw: --lock
+    user:
+      name: user
+      groups: wheel
+    autopart: --type=lvm
+    clearpart: --all --initlabel
