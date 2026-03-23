@@ -1,93 +1,55 @@
 #!/bin/bash
-# Deeprun - GNOME Extensions Build Script
-# Builds and installs extensions into the system image
+# Deeprun - GNOME Extensions Install Script
 
 set -eoux pipefail
 
 EXTENSIONS_DIR="/usr/share/gnome-shell/extensions"
 SCHEMAS_DIR="/usr/share/glib-2.0/schemas"
+GNOME_VERSION=$(gnome-shell --version | grep -oP '\d+')
 
 echo "═══════════════════════════════════════════════════"
-echo "  Deeprun - Building GNOME Extensions"
+echo "  Deeprun - Installing GNOME Extensions (GNOME $GNOME_VERSION)"
 echo "═══════════════════════════════════════════════════"
 
-# Install build dependencies
-dnf5 -y install glib2-devel
+# Install from extensions.gnome.org by ID
+install_ego() {
+    local PK=$1
+    local URL="https://extensions.gnome.org/extension-info/?pk=${PK}&shell_version=${GNOME_VERSION}"
+    local UUID=$(curl -fsSL "$URL" | python3 -c "import sys,json; print(json.load(sys.stdin)['uuid'])")
+    local DL=$(curl -fsSL "$URL" | python3 -c "import sys,json; print(json.load(sys.stdin)['download_url'])")
 
-# ============================================
-# 1. PaperWM
-# ============================================
-echo ""
+    echo "📦 Installing $UUID..."
+    mkdir -p "$EXTENSIONS_DIR/$UUID"
+    curl -fsSL "https://extensions.gnome.org$DL" -o /tmp/ext.zip
+    unzip -qo /tmp/ext.zip -d "$EXTENSIONS_DIR/$UUID"
+    rm /tmp/ext.zip
+    cp "$EXTENSIONS_DIR/$UUID/schemas/"*.gschema.xml "$SCHEMAS_DIR/" 2>/dev/null || true
+    echo "✓ $UUID"
+}
+
+# 1. PaperWM (GitHub — too large/complex for EGO zip)
 echo "📦 Installing PaperWM..."
+git clone --depth 1 https://github.com/paperwm/PaperWM "$EXTENSIONS_DIR/paperwm@paperwm.github.com"
+rm -rf "$EXTENSIONS_DIR/paperwm@paperwm.github.com/.git"
+cp "$EXTENSIONS_DIR/paperwm@paperwm.github.com/schemas/"*.gschema.xml "$SCHEMAS_DIR/" 2>/dev/null || true
+echo "✓ PaperWM"
 
-git clone --depth 1 https://github.com/paperwm/PaperWM /tmp/paperwm
-mkdir -p "$EXTENSIONS_DIR/paperwm@paperwm.github.com"
-cp -r /tmp/paperwm/* "$EXTENSIONS_DIR/paperwm@paperwm.github.com/"
+# 2. tailscale-qs (EGO #9193)
+install_ego 9193
 
-if [ -d "$EXTENSIONS_DIR/paperwm@paperwm.github.com/schemas" ]; then
-    glib-compile-schemas "$EXTENSIONS_DIR/paperwm@paperwm.github.com/schemas/"
-    cp "$EXTENSIONS_DIR/paperwm@paperwm.github.com/schemas/"*.gschema.xml "$SCHEMAS_DIR/" 2>/dev/null || true
-fi
-echo "✓ PaperWM installed"
-
-# ============================================
-# 2. tailscale-qs
-# ============================================
-echo ""
-echo "📦 Installing tailscale-qs..."
-
-git clone --depth 1 https://github.com/tailscale-qs/tailscale-gnome-qs /tmp/tailscale-qs
-
-# Determine extension UUID from metadata
-TAILSCALE_UUID=$(python3 -c "import json; print(json.load(open('/tmp/tailscale-qs/metadata.json'))['uuid'])")
-mkdir -p "$EXTENSIONS_DIR/$TAILSCALE_UUID"
-cp -r /tmp/tailscale-qs/* "$EXTENSIONS_DIR/$TAILSCALE_UUID/"
-
-if [ -d "$EXTENSIONS_DIR/$TAILSCALE_UUID/schemas" ]; then
-    glib-compile-schemas "$EXTENSIONS_DIR/$TAILSCALE_UUID/schemas/"
-    cp "$EXTENSIONS_DIR/$TAILSCALE_UUID/schemas/"*.gschema.xml "$SCHEMAS_DIR/" 2>/dev/null || true
-fi
-echo "✓ tailscale-qs installed as $TAILSCALE_UUID"
-
-# ============================================
 # 3. audio-switcher@jvzr (custom)
-# ============================================
-echo ""
 echo "📦 Installing audio-switcher@jvzr..."
-
 cp -r /tmp/extensions/audio-switcher@jvzr "$EXTENSIONS_DIR/"
+cp "$EXTENSIONS_DIR/audio-switcher@jvzr/schemas/"*.gschema.xml "$SCHEMAS_DIR/" 2>/dev/null || true
+echo "✓ audio-switcher@jvzr"
 
-if [ -d "$EXTENSIONS_DIR/audio-switcher@jvzr/schemas" ]; then
-    glib-compile-schemas "$EXTENSIONS_DIR/audio-switcher@jvzr/schemas/"
-    cp "$EXTENSIONS_DIR/audio-switcher@jvzr/schemas/"*.gschema.xml "$SCHEMAS_DIR/" 2>/dev/null || true
-fi
-echo "✓ audio-switcher@jvzr installed"
-
-# ============================================
-# GSettings override: enable extensions by default
-# ============================================
-echo ""
-echo "⚙️  Creating GSettings override..."
-
-cat > "$SCHEMAS_DIR/zz-deeprun.gschema.override" <<EOF
+# Enable all by default
+cat > "$SCHEMAS_DIR/zz-deeprun.gschema.override" <<'EOF'
 [org.gnome.shell]
-enabled-extensions=['paperwm@paperwm.github.com', '$TAILSCALE_UUID', 'audio-switcher@jvzr']
+enabled-extensions=['paperwm@paperwm.github.com', 'tailscale-gnome-qs@tailscale-qs.github.io', 'audio-switcher@jvzr']
 EOF
 
-# Compile all schemas
 glib-compile-schemas "$SCHEMAS_DIR/"
-echo "✓ GSettings schemas compiled"
+rm -rf /tmp/extensions
 
-# ============================================
-# Cleanup
-# ============================================
-echo ""
-echo "🧹 Cleaning up build deps..."
-
-dnf5 -y remove glib2-devel
-rm -rf /tmp/paperwm /tmp/tailscale-qs /tmp/extensions
-
-echo ""
-echo "═══════════════════════════════════════════════════"
-echo "  ✅ GNOME Extensions - Build Complete"
-echo "═══════════════════════════════════════════════════"
+echo "✅ GNOME Extensions done"
