@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>Deeprun Accent Color Tuner</title>
+<script src="https://colorjs.io/dist/color.global.min.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #1a1a1e; color: #fff; font-family: system-ui, sans-serif; padding: 2rem; max-width: 1000px; margin: 0 auto; }
+h1 { text-align: center; margin-bottom: 0.3rem; font-size: 1.4rem; }
+.subtitle { text-align: center; opacity: 0.4; margin-bottom: 2rem; font-size: 0.8rem; }
+.color-row { display: flex; align-items: center; gap: 1rem; margin: 1.2rem 0; padding: 1rem; background: #242428; border-radius: 12px; }
+.color-name { width: 65px; font-weight: bold; font-size: 0.9rem; text-align: right; flex-shrink: 0; }
+.swatch-group { display: flex; flex-direction: column; align-items: center; gap: 0.2rem; }
+.swatch-row { display: flex; gap: 3px; }
+.swatch { width: 80px; height: 36px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 0.6rem; font-weight: 600; font-family: monospace; }
+.label { font-size: 0.6rem; opacity: 0.4; }
+.arrow { font-size: 1.2rem; opacity: 0.3; flex-shrink: 0; }
+.controls { display: flex; flex-direction: column; gap: 0.5rem; flex: 1; min-width: 200px; }
+.control-row { display: flex; align-items: center; gap: 0.5rem; font-size: 0.75rem; }
+.control-row label { width: 65px; opacity: 0.6; text-align: right; flex-shrink: 0; }
+.control-row input[type=range] { flex: 1; accent-color: #888; }
+.control-row .val { width: 55px; font-family: monospace; font-size: 0.7rem; opacity: 0.7; }
+.export-btn { display: block; margin: 2rem auto 0; padding: 0.6rem 1.5rem; background: #3584e4; color: white; border: none; border-radius: 8px; font-size: 0.9rem; cursor: pointer; }
+.export-btn:hover { background: #2b78d4; }
+#export-output { margin-top: 1rem; padding: 1rem; background: #111; border-radius: 8px; font-family: monospace; font-size: 0.8rem; white-space: pre; display: none; }
+</style>
+</head><body>
+<h1>Deeprun — Accent Color Tuner</h1>
+<div class="subtitle">OKLCh via Color.js — hue shift + chroma scale — luminosité perçue conservée</div>
+<div id="colors"></div>
+<button class="export-btn" onclick="exportColors()">Exporter les valeurs</button>
+<pre id="export-output"></pre>
+
+<script>
+const originals = [
+  { name: 'blue',   hex: '#3584e4' },
+  { name: 'teal',   hex: '#2190a4' },
+  { name: 'green',  hex: '#3a944a' },
+  { name: 'yellow', hex: '#c88800' },
+  { name: 'orange', hex: '#ed5b00' },
+  { name: 'red',    hex: '#e62d42' },
+  { name: 'pink',   hex: '#d56199' },
+  { name: 'purple', hex: '#9141ac' },
+  { name: 'slate',  hex: '#6f8396' },
+];
+
+// Parse originals to OKLCh once
+originals.forEach(c => {
+  const col = new Color(c.hex).to('oklch');
+  c.L = col.get('l');
+  c.C = col.get('c');
+  c.h = col.get('h') || 0; // h can be NaN for achromatic
+});
+
+function compute(i, hShift, cMult) {
+  const c = originals[i];
+  const col = new Color('oklch', [c.L, c.C * cMult / 100, c.h + hShift]);
+  return col.to('srgb').toGamut({ method: 'css' }).toString({ format: 'hex' });
+}
+
+function update(i) {
+  const hShift = +document.getElementById('h' + i).value;
+  const cMult = +document.getElementById('s' + i).value;
+  const hex = compute(i, hShift, cMult);
+
+  const el = document.getElementById('nb' + i);
+  el.style.background = hex;
+  el.textContent = hex;
+  document.getElementById('hv' + i).textContent = (hShift >= 0 ? '+' : '') + hShift + '°';
+  document.getElementById('sv' + i).textContent = cMult + '%';
+}
+
+// Build UI
+const container = document.getElementById('colors');
+originals.forEach((c, i) => {
+  const row = document.createElement('div');
+  row.className = 'color-row';
+  row.innerHTML = `
+    <div class="color-name">${c.name}</div>
+    <div class="swatch-group">
+      <div class="swatch-row">
+        <div class="swatch" style="background:${c.hex};color:#fff">${c.hex}</div>
+      </div>
+      <div class="label">original</div>
+    </div>
+    <div class="arrow">→</div>
+    <div class="swatch-group">
+      <div class="swatch-row">
+        <div class="swatch" id="nb${i}" style="background:${c.hex};color:#fff">${c.hex}</div>
+      </div>
+      <div class="label">modifié</div>
+    </div>
+    <div class="controls">
+      <div class="control-row">
+        <label>Hue</label>
+        <input type="range" min="-180" max="180" value="0" id="h${i}" oninput="update(${i})">
+        <span class="val" id="hv${i}">+0°</span>
+      </div>
+      <div class="control-row">
+        <label>Chroma</label>
+        <input type="range" min="0" max="200" value="100" id="s${i}" oninput="update(${i})">
+        <span class="val" id="sv${i}">100%</span>
+      </div>
+    </div>
+  `;
+  container.appendChild(row);
+});
+
+function exportColors() {
+  const out = document.getElementById('export-output');
+  let css = '';
+  originals.forEach((c, i) => {
+    const hShift = +document.getElementById('h' + i).value;
+    const cMult = +document.getElementById('s' + i).value;
+    const hex = compute(i, hShift, cMult);
+    const changed = hShift !== 0 || cMult !== 100;
+    css += `  --accent-${c.name}: ${hex};${changed ? '' : ' /* unchanged */'}\n`;
+  });
+  out.textContent = css;
+  out.style.display = 'block';
+  navigator.clipboard.writeText(css);
+}
+</script>
+</body></html>

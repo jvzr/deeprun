@@ -1,4 +1,6 @@
-# Deeprun
+<p align="center">
+  <img src="logo.png" alt="Deeprun" />
+</p>
 
 Custom Universal Blue image based on Fedora Silverblue with GNOME + PaperWM.
 
@@ -81,25 +83,6 @@ Every image is cryptographically signed with cosign (Sigstore keyless via GitHub
 
 ```bash
 podman build -t deeprun -f Containerfile .
-```
-
-## Project structure
-
-```
-deeprun/
-├── .github/workflows/build.yml    # CI/CD
-├── build_files/
-│   ├── build.sh                   # Package installation
-│   ├── build-gnome-extensions.sh  # GNOME extensions
-│   ├── watermark.png              # Plymouth boot logo
-│   └── xkb-qwerty-fr-*.rpm       # Custom keyboard layout
-├── config/
-│   └── flatpak-install.sh         # Flatpak helper
-├── extensions/
-│   └── audio-switcher@jvzr/       # Custom GNOME extension
-├── repos/                         # DNF repository definitions
-├── Containerfile                  # Image definition
-└── image.yml                      # BlueBuild config
 ```
 
 ## License
