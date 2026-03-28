@@ -20,8 +20,12 @@ declare -A COLORS=(
 # --- Patch CSS files ---
 
 CSS_FILES=(
+  /usr/share/themes/adw-gtk3/gtk-3.0/gtk.css
+  /usr/share/themes/adw-gtk3/gtk-3.0/gtk-dark.css
   /usr/share/themes/adw-gtk3/gtk-4.0/libadwaita-tweaks.css
   /usr/share/themes/adw-gtk3/gtk-4.0/libadwaita.css
+  /usr/share/themes/adw-gtk3-dark/gtk-3.0/gtk.css
+  /usr/share/themes/adw-gtk3-dark/gtk-3.0/gtk-dark.css
   /usr/share/themes/adw-gtk3-dark/gtk-4.0/libadwaita-tweaks.css
   /usr/share/themes/adw-gtk3-dark/gtk-4.0/libadwaita.css
 )
@@ -37,16 +41,20 @@ for file in "${CSS_FILES[@]}"; do
   fi
 done
 
-# --- Patch libadwaita binary ---
+# --- Patch binaries ---
 
-LIBADWAITA=$(find /usr/lib64 -name 'libadwaita-1.so.0' -type f 2>/dev/null | head -1)
+BINARIES=(
+  /usr/lib64/libadwaita-1.so.0          # GTK4/libadwaita native apps
+  /usr/lib64/gnome-shell/libst-17.so    # GNOME Shell (St toolkit)
+)
 
-if [[ -n "$LIBADWAITA" ]]; then
-  for old in "${!COLORS[@]}"; do
-    new="${COLORS[$old]}"
-    sed -i "s/${old}/${new}/g" "$LIBADWAITA"
-  done
-  echo "Patched binary: $LIBADWAITA"
-else
-  echo "Warning: libadwaita-1.so.0 not found"
-fi
+for bin in "${BINARIES[@]}"; do
+  if [[ -f "$bin" ]]; then
+    for old in "${!COLORS[@]}"; do
+      sed -i "s/${old}/${COLORS[$old]}/g" "$bin"
+    done
+    echo "Patched binary: $bin"
+  else
+    echo "Skipped (not found): $bin"
+  fi
+done
