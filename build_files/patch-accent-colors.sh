@@ -6,15 +6,15 @@
 set -euo pipefail
 
 declare -A COLORS=(
-  ["#3584e4"]="#5181de"   # blue
-  ["#2190a4"]="#0091b3"   # teal
-  ["#3a944a"]="#339542"   # green
-  ["#c88800"]="#d5a730"   # yellow (logo gold)
-  ["#ed5b00"]="#ef5800"   # orange
-  ["#e62d42"]="#ea271a"   # red
-  ["#d56199"]="#ec4f6a"   # pink
-  ["#9141ac"]="#644bdb"   # purple
-  ["#6f8396"]="#847c94"   # slate
+  ["#3584e4"]="#4f82da"   # blue
+  ["#2190a4"]="#669126"   # teal
+  ["#3a944a"]="#349543"   # green
+  ["#c88800"]="#ce8500"   # yellow
+  ["#ed5b00"]="#e66400"   # orange
+  ["#e62d42"]="#e83000"   # red
+  ["#d56199"]="#ff0d74"   # pink
+  ["#9141ac"]="#643fef"   # purple
+  ["#6f8396"]="#827f84"   # slate
 )
 
 # --- Patch CSS files ---

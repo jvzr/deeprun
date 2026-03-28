@@ -3,33 +3,49 @@
 <script src="https://colorjs.io/dist/color.global.min.js"></script>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { background: #1a1a1e; color: #fff; font-family: system-ui, sans-serif; padding: 2rem; max-width: 1000px; margin: 0 auto; }
+body { background: #1a1a1e; color: #fff; font-family: system-ui, sans-serif; padding: 2rem; max-width: 1100px; margin: 0 auto; }
 h1 { text-align: center; margin-bottom: 0.3rem; font-size: 1.4rem; }
 .subtitle { text-align: center; opacity: 0.4; margin-bottom: 2rem; font-size: 0.8rem; }
-.color-row { display: flex; align-items: center; gap: 1rem; margin: 1.2rem 0; padding: 1rem; background: #242428; border-radius: 12px; }
-.color-name { width: 65px; font-weight: bold; font-size: 0.9rem; text-align: right; flex-shrink: 0; }
-.swatch-group { display: flex; flex-direction: column; align-items: center; gap: 0.2rem; }
-.swatch-row { display: flex; gap: 3px; }
-.swatch { width: 80px; height: 36px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 0.6rem; font-weight: 600; font-family: monospace; }
-.label { font-size: 0.6rem; opacity: 0.4; }
-.arrow { font-size: 1.2rem; opacity: 0.3; flex-shrink: 0; }
-.controls { display: flex; flex-direction: column; gap: 0.5rem; flex: 1; min-width: 200px; }
+.color-row { display: flex; align-items: center; gap: 0.8rem; margin: 1rem 0; padding: 0.8rem 1rem; background: #242428; border-radius: 12px; }
+.color-name { width: 55px; font-weight: bold; font-size: 0.85rem; text-align: right; flex-shrink: 0; }
+.swatch-group { display: flex; flex-direction: column; align-items: center; gap: 0.15rem; }
+.swatch-row { display: flex; gap: 2px; }
+.swatch { width: 58px; height: 32px; border-radius: 5px; display: flex; align-items: center; justify-content: center; font-size: 0.5rem; font-weight: 600; font-family: monospace; }
+.swatch.on-light { background: #fafafa; }
+.swatch.on-dark { background: #242428; }
+.label { font-size: 0.55rem; opacity: 0.4; }
+.arrow { font-size: 1rem; opacity: 0.3; flex-shrink: 0; }
+.controls { display: flex; flex-direction: column; gap: 0.4rem; flex: 1; min-width: 180px; }
 .control-row { display: flex; align-items: center; gap: 0.5rem; font-size: 0.75rem; }
-.control-row label { width: 65px; opacity: 0.6; text-align: right; flex-shrink: 0; }
+.control-row label { width: 55px; opacity: 0.6; text-align: right; flex-shrink: 0; }
 .control-row input[type=range] { flex: 1; accent-color: #888; }
 .control-row .val { width: 55px; font-family: monospace; font-size: 0.7rem; opacity: 0.7; }
 .export-btn { display: block; margin: 2rem auto 0; padding: 0.6rem 1.5rem; background: #3584e4; color: white; border: none; border-radius: 8px; font-size: 0.9rem; cursor: pointer; }
 .export-btn:hover { background: #2b78d4; }
 #export-output { margin-top: 1rem; padding: 1rem; background: #111; border-radius: 8px; font-family: monospace; font-size: 0.8rem; white-space: pre; display: none; }
+.section-label { font-size: 0.6rem; opacity: 0.3; text-align: center; margin-bottom: 0.5rem; letter-spacing: 0.1em; text-transform: uppercase; }
 </style>
 </head><body>
 <h1>Deeprun — Accent Color Tuner</h1>
-<div class="subtitle">OKLCh via Color.js — hue shift + chroma scale — luminosité perçue conservée</div>
+<div class="subtitle">OKLCh via Color.js — les 3 variantes GNOME : base (boutons), light (texte light mode), dark (texte dark mode)</div>
 <div id="colors"></div>
 <button class="export-btn" onclick="exportColors()">Exporter les valeurs</button>
 <pre id="export-output"></pre>
 
 <script>
+// Current Deeprun values as defaults (slider starts at these)
+const currentOverrides = {
+  blue:   '#4f82da',
+  teal:   '#669126',
+  green:  '#349543',
+  yellow: '#ce8500',
+  orange: '#e66400',
+  red:    '#e83000',
+  pink:   '#ff0d74',
+  purple: '#643fef',
+  slate:  '#827f84',
+};
+
 const originals = [
   { name: 'blue',   hex: '#3584e4' },
   { name: 'teal',   hex: '#2190a4' },
@@ -42,13 +58,44 @@ const originals = [
   { name: 'slate',  hex: '#6f8396' },
 ];
 
-// Parse originals to OKLCh once
+// Parse originals and current overrides to OKLCh
 originals.forEach(c => {
   const col = new Color(c.hex).to('oklch');
   c.L = col.get('l');
   c.C = col.get('c');
-  c.h = col.get('h') || 0; // h can be NaN for achromatic
+  c.h = col.get('h') || 0;
+
+  // Compute initial slider values from current overrides
+  const cur = new Color(currentOverrides[c.name]).to('oklch');
+  const curH = cur.get('h') || 0;
+  c.initHShift = Math.round(curH - c.h);
+  if (c.initHShift > 180) c.initHShift -= 360;
+  if (c.initHShift < -180) c.initHShift += 360;
+  c.initCMult = c.C > 0 ? Math.round((cur.get('c') / c.C) * 100) : 100;
 });
+
+// GNOME accent color derivation (same as libadwaita):
+// Light mode text: oklch with L clamped to max 0.5
+// Dark mode text:  oklch with L clamped to min 0.85
+function deriveLightHex(baseHex) {
+  const col = new Color(baseHex).to('oklch');
+  const L = col.get('l');
+  col.set('l', Math.min(L, 0.5));
+  return col.to('srgb').toGamut({ method: 'css' }).toString({ format: 'hex' });
+}
+
+function deriveDarkHex(baseHex) {
+  const col = new Color(baseHex).to('oklch');
+  const L = col.get('l');
+  col.set('l', Math.max(L, 0.85));
+  return col.to('srgb').toGamut({ method: 'css' }).toString({ format: 'hex' });
+}
+
+function contrastColor(hex) {
+  const col = new Color(hex).to('srgb');
+  const lum = 0.299 * col.get('r') + 0.587 * col.get('g') + 0.114 * col.get('b');
+  return lum > 0.5 ? '#000' : '#fff';
+}
 
 function compute(i, hShift, cMult) {
   const c = originals[i];
@@ -56,14 +103,37 @@ function compute(i, hShift, cMult) {
   return col.to('srgb').toGamut({ method: 'css' }).toString({ format: 'hex' });
 }
 
+function renderSwatch(hex, mode) {
+  // mode: 'base' = colored background, 'light' = on white bg, 'dark' = on dark bg
+  if (mode === 'base') {
+    return `<div class="swatch" style="background:${hex};color:${contrastColor(hex)}">${hex}</div>`;
+  } else if (mode === 'light') {
+    return `<div class="swatch on-light" style="color:${hex}">${hex}</div>`;
+  } else {
+    return `<div class="swatch on-dark" style="color:${hex}">${hex}</div>`;
+  }
+}
+
 function update(i) {
   const hShift = +document.getElementById('h' + i).value;
   const cMult = +document.getElementById('s' + i).value;
   const hex = compute(i, hShift, cMult);
+  const lightHex = deriveLightHex(hex);
+  const darkHex = deriveDarkHex(hex);
 
-  const el = document.getElementById('nb' + i);
-  el.style.background = hex;
-  el.textContent = hex;
+  const base = document.getElementById('nb' + i);
+  base.style.background = hex;
+  base.style.color = contrastColor(hex);
+  base.textContent = hex;
+
+  const light = document.getElementById('nl' + i);
+  light.style.color = lightHex;
+  light.textContent = lightHex;
+
+  const dark = document.getElementById('nd' + i);
+  dark.style.color = darkHex;
+  dark.textContent = darkHex;
+
   document.getElementById('hv' + i).textContent = (hShift >= 0 ? '+' : '') + hShift + '°';
   document.getElementById('sv' + i).textContent = cMult + '%';
 }
@@ -71,33 +141,43 @@ function update(i) {
 // Build UI
 const container = document.getElementById('colors');
 originals.forEach((c, i) => {
+  const origLight = deriveLightHex(c.hex);
+  const origDark = deriveDarkHex(c.hex);
+  const curHex = currentOverrides[c.name];
+  const curLight = deriveLightHex(curHex);
+  const curDark = deriveDarkHex(curHex);
+
   const row = document.createElement('div');
   row.className = 'color-row';
   row.innerHTML = `
     <div class="color-name">${c.name}</div>
     <div class="swatch-group">
       <div class="swatch-row">
-        <div class="swatch" style="background:${c.hex};color:#fff">${c.hex}</div>
+        ${renderSwatch(c.hex, 'base')}
+        ${renderSwatch(origLight, 'light')}
+        ${renderSwatch(origDark, 'dark')}
       </div>
-      <div class="label">original</div>
+      <div class="label">GNOME défaut (base · light · dark)</div>
     </div>
     <div class="arrow">→</div>
     <div class="swatch-group">
       <div class="swatch-row">
-        <div class="swatch" id="nb${i}" style="background:${c.hex};color:#fff">${c.hex}</div>
+        <div class="swatch" id="nb${i}" style="background:${curHex};color:${contrastColor(curHex)}">${curHex}</div>
+        <div class="swatch on-light" id="nl${i}" style="color:${curLight}">${curLight}</div>
+        <div class="swatch on-dark" id="nd${i}" style="color:${curDark}">${curDark}</div>
       </div>
-      <div class="label">modifié</div>
+      <div class="label">Deeprun (base · light · dark)</div>
     </div>
     <div class="controls">
       <div class="control-row">
         <label>Hue</label>
-        <input type="range" min="-180" max="180" value="0" id="h${i}" oninput="update(${i})">
-        <span class="val" id="hv${i}">+0°</span>
+        <input type="range" min="-180" max="180" value="${c.initHShift}" id="h${i}" oninput="update(${i})">
+        <span class="val" id="hv${i}">${(c.initHShift >= 0 ? '+' : '') + c.initHShift}°</span>
       </div>
       <div class="control-row">
         <label>Chroma</label>
-        <input type="range" min="0" max="200" value="100" id="s${i}" oninput="update(${i})">
-        <span class="val" id="sv${i}">100%</span>
+        <input type="range" min="0" max="200" value="${c.initCMult}" id="s${i}" oninput="update(${i})">
+        <span class="val" id="sv${i}">${c.initCMult}%</span>
       </div>
     </div>
   `;
@@ -111,7 +191,7 @@ function exportColors() {
     const hShift = +document.getElementById('h' + i).value;
     const cMult = +document.getElementById('s' + i).value;
     const hex = compute(i, hShift, cMult);
-    const changed = hShift !== 0 || cMult !== 100;
+    const changed = hex !== c.hex;
     css += `  --accent-${c.name}: ${hex};${changed ? '' : ' /* unchanged */'}\n`;
   });
   out.textContent = css;
