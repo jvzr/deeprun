@@ -28,9 +28,10 @@ RUN rpm --import https://packages.microsoft.com/keys/microsoft.asc && \
 # ============================================
 COPY build_files /tmp/build_files
 
-RUN chmod +x /tmp/build_files/build.sh /tmp/build_files/patch-accent-colors.sh && \
+RUN chmod +x /tmp/build_files/build.sh /tmp/build_files/patch-accent-colors.sh /tmp/build_files/patch-qwerty-fr-nodeadkeys.sh && \
     /tmp/build_files/build.sh && \
     /tmp/build_files/patch-accent-colors.sh && \
+    /tmp/build_files/patch-qwerty-fr-nodeadkeys.sh && \
     cp /tmp/build_files/watermark.png /usr/share/plymouth/themes/spinner/watermark.png && \
     cp /tmp/build_files/gdm-logo.png /usr/share/pixmaps/fedora-gdm-logo.png && \
     QUALIFIED_KERNEL=$(ls /lib/modules/ | sort -V | tail -1) && \
