@@ -108,7 +108,7 @@ echo ""
 echo "⌨️  Installing custom keyboard layout..."
 
 cd /tmp/build_files
-rpm -ivh --nodeps xkb-qwerty-fr-0.7.3-2.noarch.rpm
+rpm -ivh --nodeps --force xkb-qwerty-fr-0.7.3-2.noarch.rpm
 echo "✓ Custom QWERTY-FR layout installed" | tee -a $BUILDLOG
 
 # ============================================
