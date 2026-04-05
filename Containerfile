@@ -34,6 +34,8 @@ RUN chmod +x /tmp/build_files/build.sh /tmp/build_files/patch-accent-colors.sh /
     /tmp/build_files/patch-qwerty-fr-nodeadkeys.sh && \
     cp /tmp/build_files/watermark.png /usr/share/plymouth/themes/spinner/watermark.png && \
     cp /tmp/build_files/gdm-logo.png /usr/share/pixmaps/fedora-gdm-logo.png && \
+    cp /tmp/build_files/01-gdm-accent-color /etc/dconf/db/gdm.d/01-accent-color && \
+    dconf update && \
     QUALIFIED_KERNEL=$(ls /lib/modules/ | sort -V | tail -1) && \
     /usr/bin/dracut --no-hostonly --kver "$QUALIFIED_KERNEL" --reproducible --zstd -v --add ostree -f "/lib/modules/$QUALIFIED_KERNEL/initramfs.img" && \
     rm -rf /tmp/build_files && \
