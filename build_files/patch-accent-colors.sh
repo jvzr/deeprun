@@ -41,7 +41,7 @@ for file in "${CSS_FILES[@]}"; do
   fi
 done
 
-# --- Patch binaries ---
+# --- Patch binaries (use perl for binary-safe replacement) ---
 
 BINARIES=(
   /usr/lib64/libadwaita-1.so.0          # GTK4/libadwaita native apps
@@ -51,7 +51,8 @@ BINARIES=(
 for bin in "${BINARIES[@]}"; do
   if [[ -f "$bin" ]]; then
     for old in "${!COLORS[@]}"; do
-      sed -i "s/${old}/${COLORS[$old]}/g" "$bin"
+      new="${COLORS[$old]}"
+      perl -pi -0777 -e "s/\Q${old}\E/${new}/g" "$bin"
     done
     echo "Patched binary: $bin"
   else
