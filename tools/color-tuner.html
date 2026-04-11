@@ -36,9 +36,9 @@ h1 { text-align: center; margin-bottom: 0.3rem; font-size: 1.4rem; }
 // Current Deeprun values as defaults (slider starts at these)
 const currentOverrides = {
   blue:   '#4f82da',
-  teal:   '#14967d',
+  teal:   '#0b9680',
   green:  '#6e8b2d',
-  yellow: '#c98700',
+  yellow: '#c68900',
   orange: '#e7611f',
   red:    '#e92c1e',
   pink:   '#f93379',
@@ -73,6 +73,30 @@ originals.forEach(c => {
   if (c.initHShift < -180) c.initHShift += 360;
   c.initCMult = c.C > 0 ? Math.round((cur.get('c') / c.C) * 100) : 100;
 });
+
+// libadwaita OKLCh hue bands for accent color matching (from adw-accent-color.c)
+// A color must fall within its band for libadwaita to recognize it correctly
+const HUE_BANDS = {
+  blue:   [240, 300],
+  teal:   [175, 240],
+  green:  [105, 175],
+  yellow: [75.5, 105],
+  orange: [45, 75.5],
+  red:    [20, 45],    // also wraps around 0-20 with pink
+  pink:   [330, 380],  // wraps: 330-360 + 0-20
+  purple: [300, 330],
+  slate:  null,        // matched by low chroma, not hue
+};
+
+function checkHueBand(name, hex) {
+  const band = HUE_BANDS[name];
+  if (!band) return { ok: true, hue: 0, band: null }; // slate
+  const col = new Color(hex).to('oklch');
+  let hue = col.get('h') || 0;
+  // Handle pink wrapping
+  if (name === 'pink' && hue < 45) hue += 360;
+  return { ok: hue >= band[0] && hue <= band[1], hue, band };
+}
 
 // GNOME accent color derivation (same as libadwaita):
 // Light mode text: oklch with L clamped to max 0.5
@@ -136,6 +160,19 @@ function update(i) {
 
   document.getElementById('hv' + i).textContent = (hShift >= 0 ? '+' : '') + hShift + '°';
   document.getElementById('sv' + i).textContent = cMult + '%';
+
+  // Hue band check
+  const check = checkHueBand(originals[i].name, hex);
+  const indicator = document.getElementById('hb' + i);
+  if (check.band) {
+    indicator.textContent = check.ok
+      ? `✓ hue ${check.hue.toFixed(1)}° ∈ [${check.band[0]}°, ${check.band[1]}°]`
+      : `✗ hue ${check.hue.toFixed(1)}° ∉ [${check.band[0]}°, ${check.band[1]}°]`;
+    indicator.style.color = check.ok ? '#6e8b2d' : '#f93379';
+  } else {
+    indicator.textContent = '— (chroma-based)';
+    indicator.style.color = '#827f84';
+  }
 }
 
 // Build UI
@@ -179,9 +216,14 @@ originals.forEach((c, i) => {
         <input type="range" min="0" max="200" value="${c.initCMult}" id="s${i}" oninput="update(${i})">
         <span class="val" id="sv${i}">${c.initCMult}%</span>
       </div>
+      <div class="control-row">
+        <label>Band</label>
+        <span class="val" id="hb${i}" style="width:auto;font-size:0.65rem"></span>
+      </div>
     </div>
   `;
   container.appendChild(row);
+  update(i); // trigger initial hue band check
 });
 
 function exportColors() {
