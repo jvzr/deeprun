@@ -5,17 +5,16 @@
 
 set -euo pipefail
 
-declare -A COLORS=(
-  ["#3584e4"]="#4f82da"   # blue
-  ["#2190a4"]="#34956d"   # teal
-  ["#3a944a"]="#6e8b2d"   # green
-  ["#c88800"]="#ce8400"   # yellow
-  ["#ed5b00"]="#e7611f"   # orange
-  ["#e62d42"]="#e92c1e"   # red
-  ["#d56199"]="#f93379"   # pink
-  ["#9141ac"]="#6140ef"   # purple
-  ["#6f8396"]="#827f84"   # slate
-)
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+source "$SCRIPT_DIR/accent-colors.conf"
+
+# Build old→new mapping from the conf file
+declare -A COLORS
+for name in blue teal green yellow orange red pink purple slate; do
+  old_var="ORIGINAL_${name}"
+  new_var="ACCENT_${name}"
+  COLORS["${!old_var}"]="${!new_var}"
+done
 
 # --- Patch CSS files ---
 

@@ -45,6 +45,7 @@ RUN chmod +x /tmp/build_files/build.sh /tmp/build_files/patch-accent-colors.sh /
 # PHASE 3: Install Flatpak helper script
 # ============================================
 COPY config/flatpak-install.sh /usr/share/deeprun/flatpak-install.sh
+COPY build_files/accent-colors.conf /usr/share/deeprun/accent-colors.conf
 RUN chmod +x /usr/share/deeprun/flatpak-install.sh
 
 # ============================================
