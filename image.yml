@@ -1,7 +1,7 @@
 name: deeprun
 description: Universal Blue GNOME image with PaperWM + custom tools
 base-image: ghcr.io/ublue-os/silverblue
-image-version: "43"
+image-version: "44"
 
 installer:
   enabled: true
