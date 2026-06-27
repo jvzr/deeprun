@@ -36,7 +36,8 @@ echo "💻 Installing terminal and editor..."
 
 dnf5 -y install --allowerasing \
     ghostty \
-    code
+    code \
+    vivaldi-stable
 
 # ============================================
 # PHASE 3: Gaming

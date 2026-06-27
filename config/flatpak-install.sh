@@ -11,8 +11,7 @@ echo ""
 echo "📦 Installing browsers..."
 flatpak install -y flathub \
     app.zen_browser.zen \
-    io.github.ungoogled_software.ungoogled_chromium \
-    com.vivaldi.Vivaldi
+    io.github.ungoogled_software.ungoogled_chromium
 
 echo ""
 # Outils système (5)

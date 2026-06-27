@@ -21,7 +21,8 @@ RUN rpm --import https://packages.microsoft.com/keys/microsoft.asc && \
     rpm --import https://copr-be.cloud.fedoraproject.org/results/pgdev/ghostty/pubkey.gpg && \
     rpm --import https://repos.fyralabs.com/terra43/key.asc && \
     rpm --import https://copr-be.cloud.fedoraproject.org/results/atim/starship/pubkey.gpg && \
-    rpm --import https://pkgs.tailscale.com/stable/fedora/repo.gpg
+    rpm --import https://pkgs.tailscale.com/stable/fedora/repo.gpg && \
+    rpm --import https://repo.vivaldi.com/archive/linux_signing_key.pub
 
 # ============================================
 # PHASE 2: Install packages + Plymouth + initramfs
