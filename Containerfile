@@ -49,6 +49,9 @@ COPY config/flatpak-install.sh /usr/share/deeprun/flatpak-install.sh
 COPY build_files/accent-colors.conf /usr/share/deeprun/accent-colors.conf
 RUN chmod +x /usr/share/deeprun/flatpak-install.sh
 
+# Auto-login GDM (PC personnel, utilisateur unique)
+COPY config/gdm-custom.conf /etc/gdm/custom.conf
+
 # ============================================
 # Final ostree commit
 # ============================================
