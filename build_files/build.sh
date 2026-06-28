@@ -34,6 +34,15 @@ dnf5 -y remove \
 echo ""
 echo "💻 Installing terminal and editor..."
 
+# /opt est un symlink vers /var/opt sur ostree, non inscriptible au build.
+# Vivaldi (et autres RPM s'installant dans /opt) échouent sinon.
+# On remplace le symlink par un vrai dossier sous /usr.
+if [ -L /opt ]; then
+    rm -f /opt
+    mkdir -p /usr/lib/opt
+    ln -s /usr/lib/opt /opt
+fi
+
 dnf5 -y install --allowerasing \
     ghostty \
     code \
