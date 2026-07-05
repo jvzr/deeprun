@@ -52,6 +52,15 @@ RUN chmod +x /usr/share/deeprun/flatpak-install.sh
 # Auto-login GDM (PC personnel, utilisateur unique)
 COPY config/gdm-custom.conf /etc/gdm/custom.conf
 
+# Trousseau GNOME : garder un mot de passe vide malgré un login/changement de mdp.
+# En auto-login, gnome-keyring-daemon --login déverrouille un trousseau à mdp vide
+# tout seul. La ligne `password ... pam_gnome_keyring.so use_authtok` re-synchronise
+# sinon le mdp du trousseau sur celui de la session (login manuel, passwd) et casse ça.
+# On la neutralise (module `optional` : aucun impact sur l'authentification).
+RUN if grep -qE '^-?password.*pam_gnome_keyring\.so use_authtok' /etc/pam.d/gdm-password; then \
+        sed -i '/pam_gnome_keyring\.so use_authtok/ s/^/# deeprun-disabled: /' /etc/pam.d/gdm-password; \
+    fi
+
 # ============================================
 # Final ostree commit
 # ============================================
