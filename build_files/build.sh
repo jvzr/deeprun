@@ -112,6 +112,16 @@ dnf5 -y install \
     tailscale
 
 # ============================================
+# PHASE 6b: Domotique (dépendances)
+# ============================================
+echo ""
+echo "🏠 Installing home-automation dependencies..."
+
+# Requis par ~/.local/bin/matter-commission (appairage Matter-over-Thread)
+dnf5 -y install \
+    python3-websockets
+
+# ============================================
 # PHASE 7: Custom Keyboard Layout
 # ============================================
 echo ""

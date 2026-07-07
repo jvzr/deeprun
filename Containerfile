@@ -62,6 +62,16 @@ RUN if grep -qE '^-?password.*pam_gnome_keyring\.so use_authtok' /etc/pam.d/gdm-
     fi
 
 # ============================================
+# PHASE 4: Domotique (Thread/Matter)
+# ============================================
+# Accès au dongle Sonoff MG24 (propriétaire user + symlink /dev/mg24)
+COPY config/domotique/99-mg24.rules   /etc/udev/rules.d/99-mg24.rules
+# Forwarding IPv4/IPv6 requis par l'OpenThread Border Router
+COPY config/domotique/99-otbr.conf    /etc/sysctl.d/99-otbr.conf
+# Quadlet système de l'OTBR (rootful). Données Thread dans /var/lib/otbr_data (hors image).
+COPY config/domotique/otbr.container  /etc/containers/systemd/otbr.container
+
+# ============================================
 # Final ostree commit
 # ============================================
 RUN ostree container commit

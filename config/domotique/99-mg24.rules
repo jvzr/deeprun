@@ -1,0 +1,1 @@
+SUBSYSTEM=="tty", ATTRS{idVendor}=="10c4", ATTRS{idProduct}=="ea60", ATTRS{serial}=="52251576bbf5ef11a552a0a29ed47d52", OWNER="jvzr", MODE="0660", SYMLINK+="mg24"
